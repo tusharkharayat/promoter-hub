@@ -7,28 +7,28 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 0 0% 0%;
+    --foreground: 0 0% 7%;
 
     --card: 0 0% 97%;
-    --card-foreground: 0 0% 0%;
+    --card-foreground: 0 0% 7%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 0%;
+    --popover-foreground: 0 0% 7%;
 
     --primary: 228 79% 35%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 228 85% 25%;
+    --primary-hover: 228 85% 28%;
 
-    --secondary: 0 0% 97%;
-    --secondary-foreground: 0 0% 0%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 7%;
 
     --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 30%;
+    --muted-foreground: 0 0% 45%;
 
-    --accent: 212 100% 57%;
+    --accent: 212 100% 47%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
     --border: 0 0% 90%;
@@ -38,8 +38,8 @@
     --radius: 1.5rem;
 
     --surface: 0 0% 97%;
-    --shadow-elegant: 0 20px 40px rgba(0,0,0,0.06);
-    --shadow-soft: 0 10px 30px rgba(0,0,0,0.04);
+    --glass: 0 0% 100% / 0.72;
+    --glass-border: 0 0% 100% / 0.18;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -57,9 +57,19 @@
     @apply border-border;
   }
 
+  html, body, #root {
+    height: 100%;
+    overflow: hidden;
+    touch-action: none;
+    -webkit-overflow-scrolling: none;
+    overscroll-behavior: none;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-user-select: none;
+    user-select: none;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -72,10 +82,10 @@
     transition-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
   }
 
-  .text-gradient-samsung {
-    background: linear-gradient(135deg, hsl(228 79% 35%), hsl(212 100% 57%));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  .glass-button {
+    background: hsla(var(--glass));
+    backdrop-filter: blur(20px) saturate(1.8);
+    -webkit-backdrop-filter: blur(20px) saturate(1.8);
+    border: 1px solid hsla(var(--glass-border));
   }
 }
