@@ -149,7 +149,7 @@ const VideoScreen = ({
                 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => onButtonTap(i)}
-                className="w-full py-4 rounded-2xl text-[15px] font-semibold text-white glass-button active:bg-white/20 transition-colors"
+                className="w-full py-4 rounded-2xl text-[15px] font-semibold text-white glass-morph active:bg-white/25 transition-colors"
               >
                 {label}
               </motion.button>
