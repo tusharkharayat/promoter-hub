@@ -97,7 +97,6 @@ const VideoScreen = ({
             src={videoSrc}
             className="w-full h-full object-cover"
             playsInline
-            muted
             onCanPlay={handleCanPlay}
             onEnded={handleEnded}
           />
