@@ -62,7 +62,7 @@ const HeroSection = () => {
         >
           <div className="absolute inset-0 bg-gradient-radial from-primary/5 to-transparent rounded-full blur-3xl scale-150" />
           <img
-            src={galaxyHero}
+            src="/lovable-uploads/80f35529-fa10-4cf9-b7c2-907e4d5850ee.jpg"
             alt="Samsung Galaxy S24 Ultra"
             width={400}
             height={480}
