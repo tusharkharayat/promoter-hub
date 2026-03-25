@@ -113,9 +113,9 @@ const VideoScreen = ({
               transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
               className="absolute inset-0"
               style={{
-                backdropFilter: "blur(12px)",
-                WebkitBackdropFilter: "blur(12px)",
-                background: "rgba(0,0,0,0.35)",
+                backdropFilter: "blur(6px)",
+                WebkitBackdropFilter: "blur(6px)",
+                background: "rgba(0,0,0,0.2)",
               }}
             />
           )}
@@ -149,7 +149,7 @@ const VideoScreen = ({
                 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => onButtonTap(i)}
-                className="w-full py-4 rounded-2xl text-[15px] font-semibold text-white glass-button active:bg-white/20 transition-colors"
+                className="w-full py-4 rounded-2xl text-[15px] font-semibold text-white glass-morph active:bg-white/25 transition-colors"
               >
                 {label}
               </motion.button>

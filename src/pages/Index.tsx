@@ -19,8 +19,7 @@ const CATEGORY_BUTTONS: Record<string, string[]> = {
 };
 
 const PRODUCT_BUTTONS: Record<string, string[]> = {
-  "Galaxy Book 6": ["Performance & Specs", "AI Features", "Design & Display", "Where to Buy"],
-  // Default for other products
+  "Galaxy Book 6": ["Galaxy AI Built-In", "Intel Core Ultra", "16\" AMOLED Display", "All-Day Battery"],
 };
 
 const toNodeKey = (label: string) =>
