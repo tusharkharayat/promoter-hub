@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import galaxyHero from "@/assets/galaxy-hero.png";
+
 import { MessageCircle, ChevronDown } from "lucide-react";
 
 const HeroSection = () => {
