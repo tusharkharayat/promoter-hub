@@ -45,7 +45,7 @@ const VirtualPromoterFAB = () => {
                 <div>
                   <h3 className="font-bold text-foreground">Samsung Virtual Promoter</h3>
                   <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
+                    <span className="w-2 h-2 rounded-full bg-accent inline-block" />
                     Online — Ask me anything
                   </p>
                 </div>
