@@ -123,7 +123,7 @@ const VideoScreen = ({ videoSrc, onVideoEnd, buttons, onButtonTap, buttonsExitin
         )}
 
         <AnimatePresence>
-          {anyVisible && !buttonsExiting && (
+          {allVisible && !buttonsExiting && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
