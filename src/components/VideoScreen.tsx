@@ -91,7 +91,7 @@ const VideoScreen = ({ videoSrc, onVideoEnd, buttons, onButtonTap, buttonsExitin
   }, [videoSrc, onVideoEnd, buttons]);
 
   const isPlaceholder = !videoSrc || videoSrc.startsWith("placeholder");
-  const anyVisible = visibleButtons.size > 0;
+  const allVisible = visibleButtons.size === buttons.length && buttons.length > 0;
 
   return (
     <motion.div
