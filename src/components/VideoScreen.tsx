@@ -33,8 +33,9 @@ const VideoScreen = ({ videoSrc, onVideoEnd, buttons, onButtonTap, buttonsExitin
   const handleEnded = useCallback(() => {
     if (!videoEndedRef.current) {
       videoEndedRef.current = true;
-      // Show all remaining buttons when video ends
+      // Show all remaining buttons when video ends naturally
       setVisibleButtons(new Set(buttons.map((_, i) => i)));
+      videoRef.current?.pause();
       onVideoEnd();
     }
   }, [onVideoEnd, buttons]);
@@ -56,9 +57,10 @@ const VideoScreen = ({ videoSrc, onVideoEnd, buttons, onButtonTap, buttonsExitin
       });
       if (!changed) return prev;
 
-      // If all buttons are now visible, notify parent
+      // If all buttons are now visible, pause video and notify parent
       if (next.size === buttons.length && !videoEndedRef.current) {
         videoEndedRef.current = true;
+        vid.pause();
         onVideoEnd();
       }
       return next;
@@ -89,7 +91,7 @@ const VideoScreen = ({ videoSrc, onVideoEnd, buttons, onButtonTap, buttonsExitin
   }, [videoSrc, onVideoEnd, buttons]);
 
   const isPlaceholder = !videoSrc || videoSrc.startsWith("placeholder");
-  const anyVisible = visibleButtons.size > 0;
+  const allVisible = visibleButtons.size === buttons.length && buttons.length > 0;
 
   return (
     <motion.div
@@ -105,7 +107,7 @@ const VideoScreen = ({ videoSrc, onVideoEnd, buttons, onButtonTap, buttonsExitin
               <div className="w-28 h-28 rounded-full bg-primary/20 flex items-center justify-center mb-4">
                 <div className="w-20 h-20 rounded-full bg-primary/30" />
               </div>
-              <p className="text-primary-foreground/60 text-sm font-medium">{anyVisible ? "" : "Promoter is speaking..."}</p>
+              <p className="text-primary-foreground/60 text-sm font-medium">{allVisible ? "" : "Promoter is speaking..."}</p>
             </motion.div>
           </div>
         ) : (
@@ -121,7 +123,7 @@ const VideoScreen = ({ videoSrc, onVideoEnd, buttons, onButtonTap, buttonsExitin
         )}
 
         <AnimatePresence>
-          {anyVisible && !buttonsExiting && (
+          {allVisible && !buttonsExiting && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
