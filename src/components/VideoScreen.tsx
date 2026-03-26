@@ -33,8 +33,9 @@ const VideoScreen = ({ videoSrc, onVideoEnd, buttons, onButtonTap, buttonsExitin
   const handleEnded = useCallback(() => {
     if (!videoEndedRef.current) {
       videoEndedRef.current = true;
-      // Show all remaining buttons when video ends
+      // Show all remaining buttons when video ends naturally
       setVisibleButtons(new Set(buttons.map((_, i) => i)));
+      videoRef.current?.pause();
       onVideoEnd();
     }
   }, [onVideoEnd, buttons]);
