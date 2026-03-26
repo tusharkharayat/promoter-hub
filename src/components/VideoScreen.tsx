@@ -56,9 +56,10 @@ const VideoScreen = ({ videoSrc, onVideoEnd, buttons, onButtonTap, buttonsExitin
       });
       if (!changed) return prev;
 
-      // If all buttons are now visible, notify parent
+      // If all buttons are now visible, pause video and notify parent
       if (next.size === buttons.length && !videoEndedRef.current) {
         videoEndedRef.current = true;
+        vid.pause();
         onVideoEnd();
       }
       return next;
