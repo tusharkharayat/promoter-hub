@@ -18,13 +18,15 @@ const VideoScreen = ({ videoSrc, onVideoEnd, buttons, onButtonTap, buttonsExitin
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoReady, setVideoReady] = useState(false);
   const [visibleButtons, setVisibleButtons] = useState<Set<number>>(new Set());
+  const [hasVideoEnded, setHasVideoEnded] = useState(false);
   const videoEndedRef = useRef(false);
 
   useEffect(() => {
     const vid = videoRef.current;
-    if (!vid) return;
     videoEndedRef.current = false;
+    setHasVideoEnded(false);
     setVisibleButtons(new Set());
+    if (!vid) return;
     vid.play().catch(() => setVideoReady(true));
   }, [videoSrc]);
 
@@ -33,14 +35,13 @@ const VideoScreen = ({ videoSrc, onVideoEnd, buttons, onButtonTap, buttonsExitin
   const handleEnded = useCallback(() => {
     if (!videoEndedRef.current) {
       videoEndedRef.current = true;
-      // Show all remaining buttons when video ends naturally
+      setHasVideoEnded(true);
       setVisibleButtons(new Set(buttons.map((_, i) => i)));
       videoRef.current?.pause();
       onVideoEnd();
     }
   }, [onVideoEnd, buttons]);
 
-  // Check timestamps during playback to show buttons individually
   const handleTimeUpdate = useCallback(() => {
     const vid = videoRef.current;
     if (!vid) return;
@@ -49,49 +50,57 @@ const VideoScreen = ({ videoSrc, onVideoEnd, buttons, onButtonTap, buttonsExitin
     setVisibleButtons((prev) => {
       let changed = false;
       const next = new Set(prev);
+
       buttons.forEach((btn, i) => {
         if (btn.appearAtSeconds > 0 && currentTime >= btn.appearAtSeconds && !prev.has(i)) {
           next.add(i);
           changed = true;
         }
       });
-      if (!changed) return prev;
 
-      // If all buttons are now visible, pause video and notify parent
-      if (next.size === buttons.length && !videoEndedRef.current) {
-        videoEndedRef.current = true;
-        vid.pause();
-        onVideoEnd();
-      }
-      return next;
+      return changed ? next : prev;
     });
-  }, [buttons, onVideoEnd]);
+  }, [buttons]);
 
-  // Placeholder: simulate video ending
   useEffect(() => {
-    if (!videoSrc || videoSrc.startsWith("placeholder")) {
-      // Show buttons one by one for placeholder, then call onVideoEnd
-      const timers: ReturnType<typeof setTimeout>[] = [];
-      buttons.forEach((btn, i) => {
-        const delay = btn.appearAtSeconds > 0 ? btn.appearAtSeconds * 1000 : 3000;
-        timers.push(setTimeout(() => {
-          setVisibleButtons((prev) => {
-            const next = new Set(prev);
-            next.add(i);
-            if (next.size === buttons.length && !videoEndedRef.current) {
-              videoEndedRef.current = true;
-              onVideoEnd();
-            }
-            return next;
-          });
-        }, delay));
-      });
-      return () => timers.forEach(clearTimeout);
-    }
+    if (!videoSrc || !videoSrc.startsWith("placeholder")) return;
+
+    const timers: ReturnType<typeof setTimeout>[] = [];
+
+    buttons.forEach((btn, i) => {
+      if (btn.appearAtSeconds > 0) {
+        timers.push(
+          setTimeout(() => {
+            setVisibleButtons((prev) => {
+              const next = new Set(prev);
+              next.add(i);
+              return next;
+            });
+          }, btn.appearAtSeconds * 1000)
+        );
+      }
+    });
+
+    const endDelay = Math.max(
+      3000,
+      ...buttons.map((btn) => (btn.appearAtSeconds > 0 ? btn.appearAtSeconds * 1000 : 0))
+    );
+
+    timers.push(
+      setTimeout(() => {
+        if (videoEndedRef.current) return;
+        videoEndedRef.current = true;
+        setHasVideoEnded(true);
+        setVisibleButtons(new Set(buttons.map((_, i) => i)));
+        onVideoEnd();
+      }, endDelay)
+    );
+
+    return () => timers.forEach(clearTimeout);
   }, [videoSrc, onVideoEnd, buttons]);
 
   const isPlaceholder = !videoSrc || videoSrc.startsWith("placeholder");
-  const allVisible = visibleButtons.size === buttons.length && buttons.length > 0;
+  const anyVisible = visibleButtons.size > 0;
 
   return (
     <motion.div
@@ -107,7 +116,7 @@ const VideoScreen = ({ videoSrc, onVideoEnd, buttons, onButtonTap, buttonsExitin
               <div className="w-28 h-28 rounded-full bg-primary/20 flex items-center justify-center mb-4">
                 <div className="w-20 h-20 rounded-full bg-primary/30" />
               </div>
-              <p className="text-primary-foreground/60 text-sm font-medium">{allVisible ? "" : "Promoter is speaking..."}</p>
+              <p className="text-primary-foreground/60 text-sm font-medium">{anyVisible ? "" : "Promoter is speaking..."}</p>
             </motion.div>
           </div>
         ) : (
@@ -123,7 +132,7 @@ const VideoScreen = ({ videoSrc, onVideoEnd, buttons, onButtonTap, buttonsExitin
         )}
 
         <AnimatePresence>
-          {allVisible && !buttonsExiting && (
+          {hasVideoEnded && !buttonsExiting && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
