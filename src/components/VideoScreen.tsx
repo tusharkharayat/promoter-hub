@@ -16,14 +16,7 @@ interface Props {
   buttonsExiting: boolean;
 }
 
-const VideoScreen = ({
-  videoSrc,
-  onVideoEnd,
-  buttons,
-  onButtonTap,
-  showButtons,
-  buttonsExiting,
-}: Props) => {
+const VideoScreen = ({ videoSrc, onVideoEnd, buttons, onButtonTap, showButtons, buttonsExiting }: Props) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoReady, setVideoReady] = useState(false);
 
@@ -72,8 +65,7 @@ const VideoScreen = ({
           <div
             className="w-full h-full flex items-center justify-center"
             style={{
-              background:
-                "linear-gradient(180deg, hsl(228 30% 12%) 0%, hsl(228 40% 8%) 100%)",
+              background: "linear-gradient(180deg, hsl(228 30% 12%) 0%, hsl(228 40% 8%) 100%)",
             }}
           >
             <motion.div
@@ -112,7 +104,7 @@ const VideoScreen = ({
               transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
               className="absolute inset-0"
               style={{
-                backdropFilter: "blur(6px)",
+                backdropFilter: "blur(3px)",
                 WebkitBackdropFilter: "blur(6px)",
                 background: "rgba(0,0,0,0.2)",
               }}
@@ -123,9 +115,7 @@ const VideoScreen = ({
 
       {/* Samsung wordmark top */}
       <div className="absolute top-0 left-0 right-0 z-10 flex justify-center pt-12">
-        <span className="text-[11px] font-bold tracking-[0.22em] uppercase text-white/50">
-          Samsung
-        </span>
+        <span className="text-[11px] font-bold tracking-[0.22em] uppercase text-white/50">Samsung</span>
       </div>
 
       {/* Action Buttons */}
@@ -136,11 +126,7 @@ const VideoScreen = ({
               <motion.button
                 key={label}
                 initial={{ opacity: 0, y: 60 }}
-                animate={
-                  buttonsExiting
-                    ? { opacity: 0, y: 80 }
-                    : { opacity: 1, y: 0 }
-                }
+                animate={buttonsExiting ? { opacity: 0, y: 80 } : { opacity: 1, y: 0 }}
                 transition={{
                   delay: buttonsExiting ? i * 0.05 : 0.15 + i * 0.08,
                   duration: buttonsExiting ? 0.35 : 0.6,
