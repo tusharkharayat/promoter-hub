@@ -88,10 +88,10 @@ const Index = () => {
     }, 500);
   }, [currentButtons, getVideoForNode, getButtonsForNode]);
 
-  // Compute appear_at_seconds: use the max of all buttons for this node (they all appear together)
-  const appearAtSeconds = currentButtons.length > 0
-    ? Math.max(...currentButtons.map((b) => b.appear_at_seconds))
-    : 0;
+  const buttonsWithTimestamps = currentButtons.map((b) => ({
+    label: b.label,
+    appearAtSeconds: b.appear_at_seconds,
+  }));
 
   return (
     <div className="fixed inset-0 bg-foreground overflow-hidden">
@@ -106,11 +106,9 @@ const Index = () => {
           key={videoKeyRef.current}
           videoSrc={currentVideoUrl || `placeholder-${videoKeyRef.current}`}
           onVideoEnd={handleVideoEnd}
-          buttons={currentButtons.map((b) => b.label)}
+          buttons={buttonsWithTimestamps}
           onButtonTap={handleButtonTap}
-          showButtons={state === "show-buttons" || state === "buttons-exiting"}
           buttonsExiting={state === "buttons-exiting"}
-          appearAtSeconds={appearAtSeconds}
         />
       )}
     </div>
