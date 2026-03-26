@@ -107,7 +107,7 @@ const VideoScreen = ({ videoSrc, onVideoEnd, buttons, onButtonTap, buttonsExitin
               <div className="w-28 h-28 rounded-full bg-primary/20 flex items-center justify-center mb-4">
                 <div className="w-20 h-20 rounded-full bg-primary/30" />
               </div>
-              <p className="text-primary-foreground/60 text-sm font-medium">{anyVisible ? "" : "Promoter is speaking..."}</p>
+              <p className="text-primary-foreground/60 text-sm font-medium">{allVisible ? "" : "Promoter is speaking..."}</p>
             </motion.div>
           </div>
         ) : (
