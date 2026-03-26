@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      flow_buttons: {
+        Row: {
+          appear_at_seconds: number
+          created_at: string
+          id: string
+          label: string
+          node_key: string
+          sort_order: number
+          target_node_key: string | null
+        }
+        Insert: {
+          appear_at_seconds?: number
+          created_at?: string
+          id?: string
+          label: string
+          node_key: string
+          sort_order?: number
+          target_node_key?: string | null
+        }
+        Update: {
+          appear_at_seconds?: number
+          created_at?: string
+          id?: string
+          label?: string
+          node_key?: string
+          sort_order?: number
+          target_node_key?: string | null
+        }
+        Relationships: []
+      }
       flow_videos: {
         Row: {
           created_at: string
