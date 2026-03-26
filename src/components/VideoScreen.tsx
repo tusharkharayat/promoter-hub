@@ -104,7 +104,7 @@ const VideoScreen = ({ videoSrc, onVideoEnd, buttons, onButtonTap, showButtons, 
               transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
               className="absolute inset-0"
               style={{
-                backdropFilter: "blur(3px)",
+                backdropFilter: "blur(2.5px)",
                 WebkitBackdropFilter: "blur(6px)",
                 background: "rgba(0,0,0,0.2)",
               }}
