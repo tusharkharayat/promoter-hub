@@ -78,9 +78,35 @@ const Dashboard = () => {
     fetchData();
   };
 
+  const handleCopyFromEnglish = async () => {
+    setLoading(true);
+    const [videosRes, buttonsRes] = await Promise.all([
+      supabase.from("flow_videos").select("*").eq("language", "en"),
+      supabase.from("flow_buttons").select("*").eq("language", "en"),
+    ]);
+    if (videosRes.data && videosRes.data.length > 0) {
+      const newVideos = videosRes.data.map(({ id, created_at, updated_at, ...rest }) => ({
+        ...rest,
+        language: selectedLang,
+        video_url: null,
+        loop_video_url: null,
+      }));
+      await supabase.from("flow_videos").insert(newVideos);
+    }
+    if (buttonsRes.data && buttonsRes.data.length > 0) {
+      const newButtons = buttonsRes.data.map(({ id, created_at, ...rest }) => ({
+        ...rest,
+        language: selectedLang,
+      }));
+      await supabase.from("flow_buttons").insert(newButtons);
+    }
+    fetchData();
+  };
+
   const introVideos = videos.filter((v) => v.node_key === "intro");
   const categoryVideos = videos.filter((v) => ["power-user", "professional", "everyday-essential"].includes(v.node_key));
   const productVideos = videos.filter((v) => v.node_key !== "intro" && !["power-user", "professional", "everyday-essential"].includes(v.node_key));
+  const isEmpty = videos.length === 0;
 
   if (loading) {
     return (
@@ -117,9 +143,23 @@ const Dashboard = () => {
           ))}
         </div>
 
-        <VideoSection title="Intro" items={introVideos} buttons={buttons} uploading={uploading} onUpload={handleUpload} onRemove={handleRemove} onButtonsUpdate={fetchData} language={selectedLang} />
-        <VideoSection title="Category Videos" items={categoryVideos} buttons={buttons} uploading={uploading} onUpload={handleUpload} onRemove={handleRemove} onButtonsUpdate={fetchData} language={selectedLang} />
-        <VideoSection title="Product Videos" items={productVideos} buttons={buttons} uploading={uploading} onUpload={handleUpload} onRemove={handleRemove} onButtonsUpdate={fetchData} language={selectedLang} />
+        {isEmpty && selectedLang !== "en" ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <p className="text-sm text-muted-foreground mb-4">No content for this language yet.</p>
+            <button
+              onClick={handleCopyFromEnglish}
+              className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+            >
+              Copy structure from English
+            </button>
+          </div>
+        ) : (
+          <>
+            <VideoSection title="Intro" items={introVideos} buttons={buttons} uploading={uploading} onUpload={handleUpload} onRemove={handleRemove} onButtonsUpdate={fetchData} language={selectedLang} />
+            <VideoSection title="Category Videos" items={categoryVideos} buttons={buttons} uploading={uploading} onUpload={handleUpload} onRemove={handleRemove} onButtonsUpdate={fetchData} language={selectedLang} />
+            <VideoSection title="Product Videos" items={productVideos} buttons={buttons} uploading={uploading} onUpload={handleUpload} onRemove={handleRemove} onButtonsUpdate={fetchData} language={selectedLang} />
+          </>
+        )}
       </div>
     </div>
   );
