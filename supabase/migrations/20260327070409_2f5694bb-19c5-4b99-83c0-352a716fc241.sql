@@ -1,0 +1,1 @@
+ALTER TABLE public.flow_videos ADD COLUMN loop_video_url text DEFAULT null;

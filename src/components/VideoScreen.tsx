@@ -8,39 +8,53 @@ interface ButtonWithTimestamp {
 
 interface Props {
   videoSrc: string;
+  loopVideoSrc?: string | null;
   onVideoEnd: () => void;
   buttons: ButtonWithTimestamp[];
   onButtonTap: (index: number) => void;
   buttonsExiting: boolean;
 }
 
-const VideoScreen = ({ videoSrc, onVideoEnd, buttons, onButtonTap, buttonsExiting }: Props) => {
+const VideoScreen = ({ videoSrc, loopVideoSrc, onVideoEnd, buttons, onButtonTap, buttonsExiting }: Props) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [videoReady, setVideoReady] = useState(false);
+  const loopVideoRef = useRef<HTMLVideoElement>(null);
   const [visibleButtons, setVisibleButtons] = useState<Set<number>>(new Set());
   const [hasVideoEnded, setHasVideoEnded] = useState(false);
+  const [showLoopVideo, setShowLoopVideo] = useState(false);
   const videoEndedRef = useRef(false);
+
+  // Cross-fade transition duration
+  const crossFadeDuration = 0.8;
 
   useEffect(() => {
     const vid = videoRef.current;
     videoEndedRef.current = false;
     setHasVideoEnded(false);
+    setShowLoopVideo(false);
     setVisibleButtons(new Set());
     if (!vid) return;
-    vid.play().catch(() => setVideoReady(true));
+    vid.play().catch(() => {});
   }, [videoSrc]);
-
-  const handleCanPlay = useCallback(() => setVideoReady(true), []);
 
   const handleEnded = useCallback(() => {
     if (!videoEndedRef.current) {
       videoEndedRef.current = true;
       setHasVideoEnded(true);
       setVisibleButtons(new Set(buttons.map((_, i) => i)));
-      videoRef.current?.pause();
+
+      // Start loop video instead of pausing on last frame
+      if (loopVideoSrc) {
+        setShowLoopVideo(true);
+        // Start loop video playback
+        setTimeout(() => {
+          loopVideoRef.current?.play().catch(() => {});
+        }, 50);
+      } else {
+        videoRef.current?.pause();
+      }
       onVideoEnd();
     }
-  }, [onVideoEnd, buttons]);
+  }, [onVideoEnd, buttons, loopVideoSrc]);
 
   const handleTimeUpdate = useCallback(() => {
     const vid = videoRef.current;
@@ -62,6 +76,7 @@ const VideoScreen = ({ videoSrc, onVideoEnd, buttons, onButtonTap, buttonsExitin
     });
   }, [buttons]);
 
+  // Placeholder fallback timers
   useEffect(() => {
     if (!videoSrc || !videoSrc.startsWith("placeholder")) return;
 
@@ -100,13 +115,12 @@ const VideoScreen = ({ videoSrc, onVideoEnd, buttons, onButtonTap, buttonsExitin
   }, [videoSrc, onVideoEnd, buttons]);
 
   const isPlaceholder = !videoSrc || videoSrc.startsWith("placeholder");
-  const anyVisible = visibleButtons.size > 0;
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
+      transition={{ duration: crossFadeDuration, ease: [0.23, 1, 0.32, 1] }}
       className="absolute inset-0 z-20 bg-foreground"
     >
       <div className="absolute inset-0">
@@ -116,23 +130,44 @@ const VideoScreen = ({ videoSrc, onVideoEnd, buttons, onButtonTap, buttonsExitin
               <div className="w-28 h-28 rounded-full bg-primary/20 flex items-center justify-center mb-4">
                 <div className="w-20 h-20 rounded-full bg-primary/30" />
               </div>
-              <p className="text-primary-foreground/60 text-sm font-medium">{anyVisible ? "" : "Promoter is speaking..."}</p>
+              <p className="text-primary-foreground/60 text-sm font-medium">{hasVideoEnded ? "" : "Promoter is speaking..."}</p>
             </motion.div>
           </div>
         ) : (
-          <video
-            ref={videoRef}
-            src={videoSrc}
-            className="w-full h-full object-cover"
-            playsInline
-            onCanPlay={handleCanPlay}
-            onEnded={handleEnded}
-            onTimeUpdate={handleTimeUpdate}
-          />
+          <>
+            {/* Main video - fades out when loop video takes over */}
+            <motion.video
+              ref={videoRef}
+              src={videoSrc}
+              className="absolute inset-0 w-full h-full object-cover"
+              playsInline
+              onEnded={handleEnded}
+              onTimeUpdate={handleTimeUpdate}
+              animate={{ opacity: showLoopVideo ? 0 : 1 }}
+              transition={{ duration: crossFadeDuration, ease: [0.23, 1, 0.32, 1] }}
+            />
+
+            {/* Loop video - cross-fades in when main video ends, always blurred */}
+            {loopVideoSrc && (
+              <motion.video
+                ref={loopVideoRef}
+                src={loopVideoSrc}
+                className="absolute inset-0 w-full h-full object-cover"
+                playsInline
+                loop
+                muted
+                initial={{ opacity: 0 }}
+                animate={{ opacity: showLoopVideo ? 1 : 0 }}
+                transition={{ duration: crossFadeDuration, ease: [0.23, 1, 0.32, 1] }}
+                style={{ filter: "blur(6px)", WebkitFilter: "blur(6px)" }}
+              />
+            )}
+          </>
         )}
 
+        {/* Blur overlay - only when video ended AND no loop video (loop video has its own blur) */}
         <AnimatePresence>
-          {hasVideoEnded && !buttonsExiting && (
+          {hasVideoEnded && !buttonsExiting && !loopVideoSrc && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -140,6 +175,20 @@ const VideoScreen = ({ videoSrc, onVideoEnd, buttons, onButtonTap, buttonsExitin
               transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
               className="absolute inset-0"
               style={{ backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", background: "rgba(0,0,0,0.2)" }}
+            />
+          )}
+        </AnimatePresence>
+
+        {/* Dark overlay for loop video readability */}
+        <AnimatePresence>
+          {showLoopVideo && !buttonsExiting && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: crossFadeDuration, ease: [0.23, 1, 0.32, 1] }}
+              className="absolute inset-0"
+              style={{ background: "rgba(0,0,0,0.2)" }}
             />
           )}
         </AnimatePresence>
