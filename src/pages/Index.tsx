@@ -65,15 +65,16 @@ const Index = () => {
     return buttonMapRef.current[nodeKey] || [];
   }, []);
 
-  const handleLanguageSelect = useCallback((code: string) => {
+  const handleLanguageSelect = useCallback(async (code: string) => {
     setSelectedLanguage(code);
+    await fetchFlowData(code);
     videoKeyRef.current += 1;
-    const node = getVideosForNode("intro");
+    const node = videoMapRef.current["intro"] || { video_url: null, loop_video_url: null };
     setCurrentVideoUrl(node.video_url);
     setCurrentLoopVideoUrl(node.loop_video_url);
-    setCurrentButtons(getButtonsForNode("intro"));
+    setCurrentButtons(buttonMapRef.current["intro"] || []);
     setState("playing-video");
-  }, [getVideosForNode, getButtonsForNode]);
+  }, [fetchFlowData]);
 
   const handleVideoEnd = useCallback(() => {
     setState("show-buttons");
