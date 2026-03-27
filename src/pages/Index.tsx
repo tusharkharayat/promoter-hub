@@ -53,6 +53,10 @@ const Index = () => {
     });
   }, []);
 
+  useEffect(() => {
+    fetchFlowData("en");
+  }, [fetchFlowData]);
+
   const getVideosForNode = useCallback((nodeKey: string) => {
     return videoMapRef.current[nodeKey] || { video_url: null, loop_video_url: null };
   }, []);
