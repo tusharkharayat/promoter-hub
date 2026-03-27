@@ -20,6 +20,7 @@ export type Database = {
           created_at: string
           id: string
           label: string
+          language: string
           node_key: string
           sort_order: number
           target_node_key: string | null
@@ -29,6 +30,7 @@ export type Database = {
           created_at?: string
           id?: string
           label: string
+          language?: string
           node_key: string
           sort_order?: number
           target_node_key?: string | null
@@ -38,6 +40,7 @@ export type Database = {
           created_at?: string
           id?: string
           label?: string
+          language?: string
           node_key?: string
           sort_order?: number
           target_node_key?: string | null
@@ -49,6 +52,7 @@ export type Database = {
           created_at: string
           id: string
           label: string
+          language: string
           loop_video_url: string | null
           node_key: string
           updated_at: string
@@ -58,6 +62,7 @@ export type Database = {
           created_at?: string
           id?: string
           label: string
+          language?: string
           loop_video_url?: string | null
           node_key: string
           updated_at?: string
@@ -67,6 +72,7 @@ export type Database = {
           created_at?: string
           id?: string
           label?: string
+          language?: string
           loop_video_url?: string | null
           node_key?: string
           updated_at?: string
