@@ -25,10 +25,10 @@ const Index = () => {
   const videoMapRef = useRef<Record<string, { video_url: string | null; loop_video_url: string | null }>>({});
   const buttonMapRef = useRef<Record<string, FlowButton[]>>({});
 
-  useEffect(() => {
+  const fetchFlowData = useCallback((lang: string) => {
     Promise.all([
-      supabase.from("flow_videos").select("node_key, video_url, loop_video_url"),
-      supabase.from("flow_buttons").select("*").order("sort_order"),
+      supabase.from("flow_videos").select("node_key, video_url, loop_video_url").eq("language", lang),
+      supabase.from("flow_buttons").select("*").eq("language", lang).order("sort_order"),
     ]).then(([videosRes, buttonsRes]) => {
       if (videosRes.data) {
         const map: Record<string, { video_url: string | null; loop_video_url: string | null }> = {};
@@ -53,6 +53,10 @@ const Index = () => {
     });
   }, []);
 
+  useEffect(() => {
+    fetchFlowData("en");
+  }, [fetchFlowData]);
+
   const getVideosForNode = useCallback((nodeKey: string) => {
     return videoMapRef.current[nodeKey] || { video_url: null, loop_video_url: null };
   }, []);
@@ -61,15 +65,16 @@ const Index = () => {
     return buttonMapRef.current[nodeKey] || [];
   }, []);
 
-  const handleLanguageSelect = useCallback((code: string) => {
+  const handleLanguageSelect = useCallback(async (code: string) => {
     setSelectedLanguage(code);
+    await fetchFlowData(code);
     videoKeyRef.current += 1;
-    const node = getVideosForNode("intro");
+    const node = videoMapRef.current["intro"] || { video_url: null, loop_video_url: null };
     setCurrentVideoUrl(node.video_url);
     setCurrentLoopVideoUrl(node.loop_video_url);
-    setCurrentButtons(getButtonsForNode("intro"));
+    setCurrentButtons(buttonMapRef.current["intro"] || []);
     setState("playing-video");
-  }, [getVideosForNode, getButtonsForNode]);
+  }, [fetchFlowData]);
 
   const handleVideoEnd = useCallback(() => {
     setState("show-buttons");

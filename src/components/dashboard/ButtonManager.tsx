@@ -9,15 +9,17 @@ interface FlowButton {
   target_node_key: string | null;
   sort_order: number;
   appear_at_seconds: number;
+  language: string;
 }
 
 interface Props {
   nodeKey: string;
   buttons: FlowButton[];
   onUpdate: () => void;
+  language: string;
 }
 
-const ButtonManager = ({ nodeKey, buttons, onUpdate }: Props) => {
+const ButtonManager = ({ nodeKey, buttons, onUpdate, language }: Props) => {
   const [adding, setAdding] = useState(false);
   const [newLabel, setNewLabel] = useState("");
   const [newTarget, setNewTarget] = useState("");
@@ -32,6 +34,7 @@ const ButtonManager = ({ nodeKey, buttons, onUpdate }: Props) => {
       target_node_key: targetKey,
       sort_order: buttons.length,
       appear_at_seconds: parseFloat(newTimestamp) || 0,
+      language,
     });
     setNewLabel("");
     setNewTarget("");
