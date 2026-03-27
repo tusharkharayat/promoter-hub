@@ -20,20 +20,20 @@ const Index = () => {
   const [selectedLanguage, setSelectedLanguage] = useState("");
   const [currentButtons, setCurrentButtons] = useState<FlowButton[]>([]);
   const [currentVideoUrl, setCurrentVideoUrl] = useState<string | null>(null);
+  const [currentLoopVideoUrl, setCurrentLoopVideoUrl] = useState<string | null>(null);
   const videoKeyRef = useRef(0);
-  const videoMapRef = useRef<Record<string, string>>({});
+  const videoMapRef = useRef<Record<string, { video_url: string | null; loop_video_url: string | null }>>({});
   const buttonMapRef = useRef<Record<string, FlowButton[]>>({});
 
-  // Load video URLs and buttons from DB
   useEffect(() => {
     Promise.all([
-      supabase.from("flow_videos").select("node_key, video_url"),
+      supabase.from("flow_videos").select("node_key, video_url, loop_video_url"),
       supabase.from("flow_buttons").select("*").order("sort_order"),
     ]).then(([videosRes, buttonsRes]) => {
       if (videosRes.data) {
-        const map: Record<string, string> = {};
-        videosRes.data.forEach((row) => {
-          if (row.video_url) map[row.node_key] = row.video_url;
+        const map: Record<string, { video_url: string | null; loop_video_url: string | null }> = {};
+        videosRes.data.forEach((row: any) => {
+          map[row.node_key] = { video_url: row.video_url, loop_video_url: row.loop_video_url };
         });
         videoMapRef.current = map;
       }
@@ -53,8 +53,8 @@ const Index = () => {
     });
   }, []);
 
-  const getVideoForNode = useCallback((nodeKey: string) => {
-    return videoMapRef.current[nodeKey] || null;
+  const getVideosForNode = useCallback((nodeKey: string) => {
+    return videoMapRef.current[nodeKey] || { video_url: null, loop_video_url: null };
   }, []);
 
   const getButtonsForNode = useCallback((nodeKey: string) => {
@@ -64,10 +64,12 @@ const Index = () => {
   const handleLanguageSelect = useCallback((code: string) => {
     setSelectedLanguage(code);
     videoKeyRef.current += 1;
-    setCurrentVideoUrl(getVideoForNode("intro"));
+    const node = getVideosForNode("intro");
+    setCurrentVideoUrl(node.video_url);
+    setCurrentLoopVideoUrl(node.loop_video_url);
     setCurrentButtons(getButtonsForNode("intro"));
     setState("playing-video");
-  }, [getVideoForNode, getButtonsForNode]);
+  }, [getVideosForNode, getButtonsForNode]);
 
   const handleVideoEnd = useCallback(() => {
     setState("show-buttons");
@@ -81,12 +83,14 @@ const Index = () => {
     setTimeout(() => {
       const targetKey = tappedButton.target_node_key || toNodeKey(tappedButton.label);
       const nextButtons = getButtonsForNode(targetKey);
+      const node = getVideosForNode(targetKey);
       setCurrentButtons(nextButtons.length > 0 ? nextButtons : []);
       videoKeyRef.current += 1;
-      setCurrentVideoUrl(getVideoForNode(targetKey));
+      setCurrentVideoUrl(node.video_url);
+      setCurrentLoopVideoUrl(node.loop_video_url);
       setState("playing-video");
     }, 500);
-  }, [currentButtons, getVideoForNode, getButtonsForNode]);
+  }, [currentButtons, getVideosForNode, getButtonsForNode]);
 
   const buttonsWithTimestamps = currentButtons.map((b) => ({
     label: b.label,
@@ -105,6 +109,7 @@ const Index = () => {
         <VideoScreen
           key={videoKeyRef.current}
           videoSrc={currentVideoUrl || `placeholder-${videoKeyRef.current}`}
+          loopVideoSrc={currentLoopVideoUrl}
           onVideoEnd={handleVideoEnd}
           buttons={buttonsWithTimestamps}
           onButtonTap={handleButtonTap}

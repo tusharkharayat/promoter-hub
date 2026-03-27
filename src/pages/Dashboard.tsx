@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, Video, Check, Loader2, Trash2, ChevronDown, ChevronRight } from "lucide-react";
+import { Upload, Video, Check, Loader2, Trash2, ChevronDown, ChevronRight, RefreshCw } from "lucide-react";
 import ButtonManager from "@/components/dashboard/ButtonManager";
 
 interface FlowVideo {
@@ -8,6 +8,7 @@ interface FlowVideo {
   node_key: string;
   label: string;
   video_url: string | null;
+  loop_video_url: string | null;
   updated_at: string;
 }
 
@@ -38,23 +39,26 @@ const Dashboard = () => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const handleUpload = async (nodeKey: string, file: File) => {
-    setUploading(nodeKey);
+  const handleUpload = async (nodeKey: string, file: File, type: "main" | "loop") => {
+    const uploadKey = `${nodeKey}-${type}`;
+    setUploading(uploadKey);
     const ext = file.name.split(".").pop();
-    const path = `${nodeKey}.${ext}`;
+    const path = type === "loop" ? `${nodeKey}-loop.${ext}` : `${nodeKey}.${ext}`;
     await supabase.storage.from("videos").remove([path]);
     const { error: uploadError } = await supabase.storage.from("videos").upload(path, file, { upsert: true });
     if (uploadError) { console.error("Upload error:", uploadError); setUploading(null); return; }
     const { data: urlData } = supabase.storage.from("videos").getPublicUrl(path);
-    await supabase.from("flow_videos").update({ video_url: urlData.publicUrl }).eq("node_key", nodeKey);
+    const field = type === "loop" ? "loop_video_url" : "video_url";
+    await supabase.from("flow_videos").update({ [field]: urlData.publicUrl }).eq("node_key", nodeKey);
     setUploading(null);
     fetchData();
   };
 
-  const handleRemove = async (nodeKey: string, videoUrl: string) => {
+  const handleRemove = async (nodeKey: string, videoUrl: string, type: "main" | "loop") => {
     const filename = videoUrl.split("/").pop();
     if (filename) await supabase.storage.from("videos").remove([filename]);
-    await supabase.from("flow_videos").update({ video_url: null }).eq("node_key", nodeKey);
+    const field = type === "loop" ? "loop_video_url" : "video_url";
+    await supabase.from("flow_videos").update({ [field]: null }).eq("node_key", nodeKey);
     fetchData();
   };
 
@@ -93,8 +97,8 @@ interface SectionProps {
   items: FlowVideo[];
   buttons: FlowButton[];
   uploading: string | null;
-  onUpload: (nodeKey: string, file: File) => void;
-  onRemove: (nodeKey: string, videoUrl: string) => void;
+  onUpload: (nodeKey: string, file: File, type: "main" | "loop") => void;
+  onRemove: (nodeKey: string, videoUrl: string, type: "main" | "loop") => void;
   onButtonsUpdate: () => void;
 }
 
@@ -109,7 +113,7 @@ const Section = ({ title, items, buttons, uploading, onUpload, onRemove, onButto
             key={v.id}
             video={v}
             buttons={buttons.filter((b) => b.node_key === v.node_key)}
-            isUploading={uploading === v.node_key}
+            uploading={uploading}
             onUpload={onUpload}
             onRemove={onRemove}
             onButtonsUpdate={onButtonsUpdate}
@@ -123,15 +127,18 @@ const Section = ({ title, items, buttons, uploading, onUpload, onRemove, onButto
 interface VideoRowProps {
   video: FlowVideo;
   buttons: FlowButton[];
-  isUploading: boolean;
-  onUpload: (nodeKey: string, file: File) => void;
-  onRemove: (nodeKey: string, videoUrl: string) => void;
+  uploading: string | null;
+  onUpload: (nodeKey: string, file: File, type: "main" | "loop") => void;
+  onRemove: (nodeKey: string, videoUrl: string, type: "main" | "loop") => void;
   onButtonsUpdate: () => void;
 }
 
-const VideoRow = ({ video, buttons, isUploading, onUpload, onRemove, onButtonsUpdate }: VideoRowProps) => {
+const VideoRow = ({ video, buttons, uploading, onUpload, onRemove, onButtonsUpdate }: VideoRowProps) => {
   const [expanded, setExpanded] = useState(false);
   const hasVideo = !!video.video_url;
+  const hasLoop = !!video.loop_video_url;
+  const isUploadingMain = uploading === `${video.node_key}-main`;
+  const isUploadingLoop = uploading === `${video.node_key}-loop`;
 
   return (
     <div>
@@ -145,25 +152,47 @@ const VideoRow = ({ video, buttons, isUploading, onUpload, onRemove, onButtonsUp
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-foreground truncate">{video.label}</p>
           <p className="text-xs text-muted-foreground">
-            {hasVideo ? "Video uploaded" : "No video"} · {buttons.length} button{buttons.length !== 1 ? "s" : ""}
+            {hasVideo ? "Video ✓" : "No video"} · {hasLoop ? "Loop ✓" : "No loop"} · {buttons.length} btn{buttons.length !== 1 ? "s" : ""}
           </p>
-        </div>
-        <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-          {hasVideo && (
-            <button onClick={() => onRemove(video.node_key, video.video_url!)} className="p-2 rounded-lg text-destructive hover:bg-destructive/10 transition-colors">
-              <Trash2 className="w-4 h-4" />
-            </button>
-          )}
-          <label className="cursor-pointer p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
-            {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-            <input type="file" accept="video/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onUpload(video.node_key, f); }} disabled={isUploading} />
-          </label>
         </div>
         {expanded ? <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />}
       </div>
 
       {expanded && (
-        <ButtonManager nodeKey={video.node_key} buttons={buttons} onUpdate={onButtonsUpdate} />
+        <div className="mt-2 ml-4 space-y-2">
+          {/* Main video upload */}
+          <div className="flex items-center gap-2 p-2 rounded-lg bg-secondary/30">
+            <Video className="w-4 h-4 text-muted-foreground shrink-0" />
+            <span className="text-xs text-muted-foreground flex-1">Main Video</span>
+            {hasVideo && (
+              <button onClick={() => onRemove(video.node_key, video.video_url!, "main")} className="p-1.5 rounded-lg text-destructive hover:bg-destructive/10 transition-colors">
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
+            <label className="cursor-pointer p-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+              {isUploadingMain ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+              <input type="file" accept="video/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onUpload(video.node_key, f, "main"); }} disabled={!!uploading} />
+            </label>
+          </div>
+
+          {/* Loop video upload */}
+          <div className="flex items-center gap-2 p-2 rounded-lg bg-secondary/30">
+            <RefreshCw className="w-4 h-4 text-muted-foreground shrink-0" />
+            <span className="text-xs text-muted-foreground flex-1">Loop Video (plays blurred after main)</span>
+            {hasLoop && (
+              <button onClick={() => onRemove(video.node_key, video.loop_video_url!, "loop")} className="p-1.5 rounded-lg text-destructive hover:bg-destructive/10 transition-colors">
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
+            <label className="cursor-pointer p-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+              {isUploadingLoop ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+              <input type="file" accept="video/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onUpload(video.node_key, f, "loop"); }} disabled={!!uploading} />
+            </label>
+          </div>
+
+          {/* Button manager */}
+          <ButtonManager nodeKey={video.node_key} buttons={buttons} onUpdate={onButtonsUpdate} />
+        </div>
       )}
     </div>
   );
