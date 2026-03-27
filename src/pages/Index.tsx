@@ -25,10 +25,10 @@ const Index = () => {
   const videoMapRef = useRef<Record<string, { video_url: string | null; loop_video_url: string | null }>>({});
   const buttonMapRef = useRef<Record<string, FlowButton[]>>({});
 
-  useEffect(() => {
+  const fetchFlowData = useCallback((lang: string) => {
     Promise.all([
-      supabase.from("flow_videos").select("node_key, video_url, loop_video_url"),
-      supabase.from("flow_buttons").select("*").order("sort_order"),
+      supabase.from("flow_videos").select("node_key, video_url, loop_video_url").eq("language", lang),
+      supabase.from("flow_buttons").select("*").eq("language", lang).order("sort_order"),
     ]).then(([videosRes, buttonsRes]) => {
       if (videosRes.data) {
         const map: Record<string, { video_url: string | null; loop_video_url: string | null }> = {};
