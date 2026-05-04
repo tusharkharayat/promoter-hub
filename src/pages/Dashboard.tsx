@@ -129,7 +129,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background overflow-auto" style={{ touchAction: "auto" }}>
+    <div className="fixed inset-0 bg-background overflow-y-auto overflow-x-hidden" style={{ touchAction: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "auto" }}>
       <div className="max-w-3xl mx-auto px-4 py-8 pb-24">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-foreground">Video Dashboard</h1>
