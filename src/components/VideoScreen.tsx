@@ -51,7 +51,8 @@ const VideoScreen = ({ videoSrc, loopVideoSrc, onVideoEnd, buttons, onButtonTap,
 
     if (!vid) return;
     vid.play().catch(() => {});
-  }, [videoSrc, loopOnly, buttons, onVideoEnd]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [videoSrc, loopVideoSrc]);
 
   const handleEnded = useCallback(() => {
     if (!videoEndedRef.current) {
