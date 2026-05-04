@@ -154,16 +154,18 @@ const VideoScreen = ({ videoSrc, loopVideoSrc, onVideoEnd, buttons, onButtonTap,
         ) : (
           <>
             {/* Main video - fades out when loop video takes over */}
-            <motion.video
-              ref={videoRef}
-              src={videoSrc}
-              className="absolute inset-0 w-full h-full object-cover"
-              playsInline
-              onEnded={handleEnded}
-              onTimeUpdate={handleTimeUpdate}
-              animate={{ opacity: showLoopVideo ? 0 : 1 }}
-              transition={{ duration: crossFadeDuration, ease: [0.23, 1, 0.32, 1] }}
-            />
+            {hasMainVideo && (
+              <motion.video
+                ref={videoRef}
+                src={videoSrc}
+                className="absolute inset-0 w-full h-full object-cover"
+                playsInline
+                onEnded={handleEnded}
+                onTimeUpdate={handleTimeUpdate}
+                animate={{ opacity: showLoopVideo ? 0 : 1 }}
+                transition={{ duration: crossFadeDuration, ease: [0.23, 1, 0.32, 1] }}
+              />
+            )}
 
             {/* Loop video - cross-fades in when main video ends, always blurred */}
             {loopVideoSrc && (
