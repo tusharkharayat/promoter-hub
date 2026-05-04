@@ -95,6 +95,7 @@ const VideoScreen = ({ videoSrc, loopVideoSrc, onVideoEnd, buttons, onButtonTap,
 
   // Placeholder fallback timers
   useEffect(() => {
+    if (loopOnly) return;
     if (!videoSrc || !videoSrc.startsWith("placeholder")) return;
 
     const timers: ReturnType<typeof setTimeout>[] = [];
