@@ -113,7 +113,7 @@ const Index = () => {
       {state !== "language-select" && (
         <VideoScreen
           key={videoKeyRef.current}
-          videoSrc={currentVideoUrl || `placeholder-${videoKeyRef.current}`}
+          videoSrc={currentVideoUrl || (currentLoopVideoUrl ? "" : `placeholder-${videoKeyRef.current}`)}
           loopVideoSrc={currentLoopVideoUrl}
           onVideoEnd={handleVideoEnd}
           buttons={buttonsWithTimestamps}
