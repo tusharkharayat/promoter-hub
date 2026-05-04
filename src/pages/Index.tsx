@@ -32,8 +32,9 @@ const Index = () => {
     ]).then(([videosRes, buttonsRes]) => {
       if (videosRes.data) {
         const map: Record<string, { video_url: string | null; loop_video_url: string | null }> = {};
+        const bust = (u: string | null) => (u ? `${u}${u.includes("?") ? "&" : "?"}t=${Date.now()}` : null);
         videosRes.data.forEach((row: any) => {
-          map[row.node_key] = { video_url: row.video_url, loop_video_url: row.loop_video_url };
+          map[row.node_key] = { video_url: bust(row.video_url), loop_video_url: bust(row.loop_video_url) };
         });
         videoMapRef.current = map;
       }
