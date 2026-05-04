@@ -69,10 +69,10 @@ const Index = () => {
     setSelectedLanguage(code);
     await fetchFlowData(code);
     videoKeyRef.current += 1;
-    const node = videoMapRef.current["intro"] || { video_url: null, loop_video_url: null };
+    const node = videoMapRef.current["product-picker"] || { video_url: null, loop_video_url: null };
     setCurrentVideoUrl(node.video_url);
     setCurrentLoopVideoUrl(node.loop_video_url);
-    setCurrentButtons(buttonMapRef.current["intro"] || []);
+    setCurrentButtons(buttonMapRef.current["product-picker"] || []);
     setState("playing-video");
   }, [fetchFlowData]);
 
@@ -113,7 +113,7 @@ const Index = () => {
       {state !== "language-select" && (
         <VideoScreen
           key={videoKeyRef.current}
-          videoSrc={currentVideoUrl || `placeholder-${videoKeyRef.current}`}
+          videoSrc={currentVideoUrl || (currentLoopVideoUrl ? "" : `placeholder-${videoKeyRef.current}`)}
           loopVideoSrc={currentLoopVideoUrl}
           onVideoEnd={handleVideoEnd}
           buttons={buttonsWithTimestamps}

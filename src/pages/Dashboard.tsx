@@ -16,25 +16,33 @@ const LANGUAGES = [
   { code: "pa", label: "ਪੰਜਾਬੀ" },
 ];
 
-// Master node structure — every language gets these nodes
-const MASTER_NODES = [
-  { node_key: "intro", label: "Intro Video (after language select)" },
-  { node_key: "power-user", label: "Power User Category Video" },
-  { node_key: "professional", label: "Professional Category Video" },
-  { node_key: "everyday-essential", label: "Everyday Essential Category Video" },
-  { node_key: "galaxy-s25-ultra", label: "Galaxy S25 Ultra" },
-  { node_key: "galaxy-z-fold-6", label: "Galaxy Z Fold 6" },
-  { node_key: "galaxy-tab-s10", label: "Galaxy Tab S10" },
-  { node_key: "galaxy-watch-ultra", label: "Galaxy Watch Ultra" },
-  { node_key: "galaxy-s25-plus", label: "Galaxy S25+" },
-  { node_key: "galaxy-book-6", label: "Galaxy Book 6" },
-  { node_key: "galaxy-buds-3-pro", label: "Galaxy Buds 3 Pro" },
-  { node_key: "smartthings", label: "SmartThings" },
-  { node_key: "galaxy-a56", label: "Galaxy A56" },
-  { node_key: "galaxy-s25-fe", label: "Galaxy S25 FE" },
-  { node_key: "galaxy-buds-3", label: "Galaxy Buds 3" },
-  { node_key: "galaxy-fit-3", label: "Galaxy Fit 3" },
+const PRODUCTS = [
+  { key: "galaxy-book-6-series", label: "Galaxy Book 6 Series" },
+  { key: "galaxy-s26", label: "Galaxy S26" },
+  { key: "galaxy-s25", label: "Galaxy S25" },
+  { key: "galaxy-watch-8", label: "Galaxy Watch 8" },
+  { key: "galaxy-tab-s10", label: "Galaxy Tab S10" },
 ];
+
+const VARIANTS = ["Ultra", "Pro", "Base"];
+
+// Master node structure — every language gets these nodes
+const MASTER_NODES: { node_key: string; label: string }[] = [
+  { node_key: "product-picker", label: "Product Picker (loop video + 5 buttons)" },
+  ...PRODUCTS.flatMap((p) => [
+    { node_key: p.key, label: `${p.label} — Intro` },
+    ...VARIANTS.map((v) => ({
+      node_key: `${p.key}-${v.toLowerCase()}`,
+      label: `${p.label} — ${v}`,
+    })),
+  ]),
+];
+
+const PICKER_KEY = "product-picker";
+const INTRO_KEYS = PRODUCTS.map((p) => p.key);
+const VARIANT_KEYS = PRODUCTS.flatMap((p) =>
+  VARIANTS.map((v) => `${p.key}-${v.toLowerCase()}`)
+);
 
 interface FlowVideo {
   id: string;
@@ -70,24 +78,65 @@ const Dashboard = () => {
     ]);
 
     let vids = (videosRes.data || []) as FlowVideo[];
+    let btns = (buttonsRes.data || []) as FlowButton[];
 
-    // Auto-seed missing nodes for this language
-    if (vids.length < MASTER_NODES.length) {
-      const existingKeys = new Set(vids.map((v) => v.node_key));
-      const missing = MASTER_NODES.filter((n) => !existingKeys.has(n.node_key));
-      if (missing.length > 0) {
-        const rows = missing.map((n) => ({
-          node_key: n.node_key,
-          label: n.label,
+    // Auto-seed missing video nodes for this language
+    const existingKeys = new Set(vids.map((v) => v.node_key));
+    const missing = MASTER_NODES.filter((n) => !existingKeys.has(n.node_key));
+    if (missing.length > 0) {
+      const rows = missing.map((n) => ({
+        node_key: n.node_key,
+        label: n.label,
+        language: selectedLang,
+      }));
+      const { data: inserted } = await supabase.from("flow_videos").insert(rows).select("*");
+      if (inserted) vids = [...vids, ...(inserted as FlowVideo[])];
+    }
+
+    // Auto-seed default buttons (picker → 5 products; each intro → 3 variants)
+    const btnsByNode = new Map<string, FlowButton[]>();
+    btns.forEach((b) => {
+      if (!btnsByNode.has(b.node_key)) btnsByNode.set(b.node_key, []);
+      btnsByNode.get(b.node_key)!.push(b);
+    });
+
+    const toInsert: Omit<FlowButton, "id">[] = [];
+
+    if (!btnsByNode.has(PICKER_KEY)) {
+      PRODUCTS.forEach((p, i) => {
+        toInsert.push({
+          node_key: PICKER_KEY,
+          label: p.label,
+          target_node_key: p.key,
+          sort_order: i,
+          appear_at_seconds: 0,
           language: selectedLang,
-        }));
-        const { data: inserted } = await supabase.from("flow_videos").insert(rows).select("*");
-        if (inserted) vids = [...vids, ...(inserted as FlowVideo[])];
+        });
+      });
+    }
+
+    PRODUCTS.forEach((p) => {
+      if (!btnsByNode.has(p.key)) {
+        VARIANTS.forEach((v, i) => {
+          toInsert.push({
+            node_key: p.key,
+            label: v,
+            target_node_key: `${p.key}-${v.toLowerCase()}`,
+            sort_order: i,
+            appear_at_seconds: 0,
+            language: selectedLang,
+          });
+        });
       }
+    });
+
+    if (toInsert.length > 0) {
+      const { data: insertedBtns } = await supabase.from("flow_buttons").insert(toInsert).select("*");
+      if (insertedBtns) btns = [...btns, ...(insertedBtns as FlowButton[])];
     }
 
     setVideos(vids);
-    if (buttonsRes.data) setButtons(buttonsRes.data as FlowButton[]);
+    setButtons(btns);
     setLoading(false);
   }, [selectedLang]);
 
@@ -116,9 +165,13 @@ const Dashboard = () => {
     fetchData();
   };
 
-  const introVideos = videos.filter((v) => v.node_key === "intro");
-  const categoryVideos = videos.filter((v) => ["power-user", "professional", "everyday-essential"].includes(v.node_key));
-  const productVideos = videos.filter((v) => v.node_key !== "intro" && !["power-user", "professional", "everyday-essential"].includes(v.node_key));
+  // Order videos according to MASTER_NODES
+  const orderedKey = (k: string) => MASTER_NODES.findIndex((n) => n.node_key === k);
+  const sortByMaster = (a: FlowVideo, b: FlowVideo) => orderedKey(a.node_key) - orderedKey(b.node_key);
+
+  const pickerVideos = videos.filter((v) => v.node_key === PICKER_KEY);
+  const introVideos = videos.filter((v) => INTRO_KEYS.includes(v.node_key)).sort(sortByMaster);
+  const variantVideos = videos.filter((v) => VARIANT_KEYS.includes(v.node_key)).sort(sortByMaster);
 
   if (loading) {
     return (
@@ -155,9 +208,9 @@ const Dashboard = () => {
           ))}
         </div>
 
-        <VideoSection title="Intro" items={introVideos} buttons={buttons} uploading={uploading} onUpload={handleUpload} onRemove={handleRemove} onButtonsUpdate={fetchData} language={selectedLang} />
-        <VideoSection title="Category Videos" items={categoryVideos} buttons={buttons} uploading={uploading} onUpload={handleUpload} onRemove={handleRemove} onButtonsUpdate={fetchData} language={selectedLang} />
-        <VideoSection title="Product Videos" items={productVideos} buttons={buttons} uploading={uploading} onUpload={handleUpload} onRemove={handleRemove} onButtonsUpdate={fetchData} language={selectedLang} />
+        <VideoSection title="Product Picker (loop + 5 buttons)" items={pickerVideos} buttons={buttons} uploading={uploading} onUpload={handleUpload} onRemove={handleRemove} onButtonsUpdate={fetchData} language={selectedLang} />
+        <VideoSection title="Product Intro Videos" items={introVideos} buttons={buttons} uploading={uploading} onUpload={handleUpload} onRemove={handleRemove} onButtonsUpdate={fetchData} language={selectedLang} />
+        <VideoSection title="Product Variants (Ultra / Pro / Base)" items={variantVideos} buttons={buttons} uploading={uploading} onUpload={handleUpload} onRemove={handleRemove} onButtonsUpdate={fetchData} language={selectedLang} />
       </div>
     </div>
   );
