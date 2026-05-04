@@ -26,15 +26,32 @@ const VideoScreen = ({ videoSrc, loopVideoSrc, onVideoEnd, buttons, onButtonTap,
   // Cross-fade transition duration
   const crossFadeDuration = 0.8;
 
+  const hasMainVideo = !!videoSrc && !videoSrc.startsWith("placeholder");
+  const loopOnly = !hasMainVideo && !!loopVideoSrc;
+
   useEffect(() => {
     const vid = videoRef.current;
     videoEndedRef.current = false;
     setHasVideoEnded(false);
     setShowLoopVideo(false);
     setVisibleButtons(new Set());
+
+    // Loop-only node: skip main video, show loop + all buttons immediately
+    if (loopOnly) {
+      videoEndedRef.current = true;
+      setHasVideoEnded(true);
+      setShowLoopVideo(true);
+      setVisibleButtons(new Set(buttons.map((_, i) => i)));
+      setTimeout(() => {
+        loopVideoRef.current?.play().catch(() => {});
+      }, 50);
+      onVideoEnd();
+      return;
+    }
+
     if (!vid) return;
     vid.play().catch(() => {});
-  }, [videoSrc]);
+  }, [videoSrc, loopOnly, buttons, onVideoEnd]);
 
   const handleEnded = useCallback(() => {
     if (!videoEndedRef.current) {
