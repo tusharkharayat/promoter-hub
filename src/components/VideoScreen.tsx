@@ -131,7 +131,7 @@ const VideoScreen = ({ videoSrc, loopVideoSrc, onVideoEnd, buttons, onButtonTap,
     return () => timers.forEach(clearTimeout);
   }, [videoSrc, onVideoEnd, buttons]);
 
-  const isPlaceholder = !videoSrc || videoSrc.startsWith("placeholder");
+  const isPlaceholder = (!videoSrc || videoSrc.startsWith("placeholder")) && !loopOnly;
 
   return (
     <motion.div
